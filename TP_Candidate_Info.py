@@ -2,14 +2,32 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Load the dataset
+import pandas as pd
+import streamlit as st
+
 @st.cache_data
 def load_data():
-    tpci = pd.read_csv('TalkpushCI_data_fetch.csv')
-    tpci['INVITATIONDT'] = pd.to_datetime(tpci['INVITATIONDT'])
-    return tpci
+    try:
+        tpci = pd.read_csv('TalkpushCI_data_fetch.csv')
 
+        # Ensure column exists
+        if 'INVITATIONDT' not in tpci.columns:
+            raise ValueError("Column 'INVITATIONDT' not found in dataset")
+
+        # Convert to datetime safely
+        tpci['INVITATIONDT'] = pd.to_datetime(tpci['INVITATIONDT'], errors='coerce')
+
+        # Drop rows with invalid dates
+        tpci = tpci.dropna(subset=['INVITATIONDT'])
+
+        return tpci
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return pd.DataFrame()  # Return an empty DataFrame to prevent crashes
+
+# Load the data
 tpci = load_data()
+
 
 # Sidebar filter
 st.sidebar.header("Filters")
@@ -59,5 +77,3 @@ manager_counts = get_top_counts(tpci, 'ASSIGNEDMANAGER', period)
 manager_counts.columns = ['Assigned Manager', 'Count']
 fig4 = px.bar(manager_counts, x='Assigned Manager', y='Count', title='Top 10 Assigned Managers')
 st.plotly_chart(fig4)
-
-# Deploy using: `streamlit run script.py` and share via Streamlit Cloud

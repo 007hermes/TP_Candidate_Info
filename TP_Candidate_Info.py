@@ -4,7 +4,7 @@ import plotly.express as px
 
 # Set page configuration
 st.set_page_config(
-    page_title="Campaign Analytics Dashboard",
+    page_title="TP_Candidate_Info Dashboard",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -42,7 +42,7 @@ period_options = {
 }
 
 # Dashboard Title
-st.title("Campaign Performance Dashboard")
+st.title("TP_Candidate_Info Dashboard")
 
 # Time period selector
 selected_period = st.selectbox(

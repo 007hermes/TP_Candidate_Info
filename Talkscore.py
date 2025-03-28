@@ -38,8 +38,9 @@ st.subheader("Correlation Heatmap of Talkscore Variables")
 talkscore_vars = ['TALKSCORE_VOCAB', 'TALKSCORE_FLUENCY', 'TALKSCORE_GRAMMAR',
                   'TALKSCORE_COMPREHENSION', 'TALKSCORE_PRONUNCIATION', 'TALKSCORE_OVERALL']
 if all(var in filtered_df.columns for var in talkscore_vars):
-    corr_matrix = filtered_df[talkscore_vars].corr()
+    corr_matrix = filtered_df[talkscore_vars].corr().round(2)
     fig2 = ff.create_annotated_heatmap(z=corr_matrix.values, x=talkscore_vars, y=talkscore_vars,
+                                       annotation_text=corr_matrix.round(2).astype(str).values,
                                        colorscale='Blues', showscale=True)
     st.plotly_chart(fig2)
 else:

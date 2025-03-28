@@ -1,39 +1,46 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.figure_factory as ff
 
 # Load data
-tpci = pd.read_csv("TalkpushCI_data_fetch.csv")
-tpci['INVITATIONDT'] = pd.to_datetime(tpci['INVITATIONDT'])
+TPSC1 = pd.read_csv('TalkpushCI_SC1.csv')
+TPSC1['INVITATIONDT'] = pd.to_datetime(TPSC1['INVITATIONDT'])
+TPSC1 = TPSC1[TPSC1['TALKSCORE_OVERALL'] > 0]
 
-# Define colors for graphs
-colors = ["#001E44", "#F5F5F5", "#E53855", "#B4BBBE", "#2F76B9", "#3B9790", "#F5BA2E", "#6A4C93", "#F77F00"]
-
-# Sidebar dropdown
-st.sidebar.header("Select Time Period")
-time_filter = st.sidebar.selectbox("Time Period", ["Last 30 days", "Last 12 Weeks", "Last 1 Year", "All Time"])
+# Dropdown options
+options = {"Last 30 days": 30, "Last 12 Weeks": 84, "Last 1 Year": 365, "All Time": None}
+selection = st.selectbox("Select Time Period", list(options.keys()))
 
 # Filter data based on selection
-max_date = tpci['INVITATIONDT'].max()
-if time_filter == "Last 30 days":
-    filtered_data = tpci[tpci['INVITATIONDT'] >= max_date - pd.DateOffset(days=30)]
-    date_freq = 'D'
-elif time_filter == "Last 12 Weeks":
-    filtered_data = tpci[tpci['INVITATIONDT'] >= max_date - pd.DateOffset(weeks=12)]
-    date_freq = 'W'
-elif time_filter == "Last 1 Year":
-    filtered_data = tpci[tpci['INVITATIONDT'] >= max_date - pd.DateOffset(years=1)]
-    date_freq = 'M'
+if options[selection]:
+    start_date = pd.Timestamp.today() - pd.Timedelta(days=options[selection])
+    filtered_df = TPSC1[TPSC1['INVITATIONDT'] >= start_date]
 else:
-    filtered_data = tpci.copy()
-    date_freq = 'M'
+    filtered_df = TPSC1
 
-# Graph 1: Lead Count Trend
-lead_trend = filtered_data.resample(date_freq, on='INVITATIONDT').count()
-fig1 = px.line(lead_trend, x=lead_trend.index, y='RECORDID', title='Lead Count Trend', color_discrete_sequence=[colors[0]])
-st.plotly_chart(fig1, use_container_width=True)
+# Define colors
+colors = ["#001E44", "#F5F5F5", "#E53855", "#B4BBBE", "#2F76B9", "#3B9790", "#F5BA2E", "#6A4C93", "#F77F00"]
 
-# Graph 2: Top 10 Campaign Titles
-top_campaigns = filtered_data['CAMPAIGNTITLE'].value_counts().nlargest(10)
-fig2 = px.bar(top_campaigns, x=top_campaigns.index, y=top_campaigns.values, title='Top 10 Campaign Titles', color_discrete_sequence=[colors[2]])
-st.plotly_chart(fig2, use_container_width=True)
+# Graph 1: Top 5 Rejection Reasons
+st.subheader("Top 5 Rejection Reasons")
+if 'REJECTED_REASON' in filtered_df.columns:
+    rejection_counts = filtered_df['REJECTED_REASON'].value_counts().nlargest(5)
+    fig1 = px.bar(x=rejection_counts.index, y=rejection_counts.values, 
+                  labels={'x': 'Rejection Reason', 'y': 'Count'}, color=rejection_counts.index,
+                  color_discrete_sequence=colors[:5])
+    st.plotly_chart(fig1)
+else:
+    st.write("No rejection reasons available in the dataset.")
+
+# Graph 2: Correlation Heatmap of Talkscore Variables
+st.subheader("Correlation Heatmap of Talkscore Variables")
+talkscore_vars = ['TALKSCORE_VOCAB', 'TALKSCORE_FLUENCY', 'TALKSCORE_GRAMMAR',
+                  'TALKSCORE_COMPREHENSION', 'TALKSCORE_PRONUNCIATION', 'TALKSCORE_OVERALL']
+if all(var in filtered_df.columns for var in talkscore_vars):
+    corr_matrix = filtered_df[talkscore_vars].corr()
+    fig2 = ff.create_annotated_heatmap(z=corr_matrix.values, x=talkscore_vars, y=talkscore_vars,
+                                       colorscale='Blues', showscale=True)
+    st.plotly_chart(fig2)
+else:
+    st.write("Talkscore variables not available in the dataset.")

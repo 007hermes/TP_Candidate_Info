@@ -5,7 +5,7 @@ import plotly.figure_factory as ff
 
 # Load data
 TPSC1 = pd.read_csv('TalkpushCI_SC1.csv')
-TPSC1['INVITATIONDT'] = pd.to_datetime(TPSC1['INVITATIONDT'])
+TPSC1['INVITATIONDT_UTC'] = pd.to_datetime(TPSC1['INVITATIONDT_UTC'])
 TPSC1 = TPSC1[TPSC1['TALKSCORE_OVERALL'] > 0]
 
 # Dropdown options
@@ -15,7 +15,7 @@ selection = st.selectbox("Select Time Period", list(options.keys()))
 # Filter data based on selection
 if options[selection]:
     start_date = pd.Timestamp.today() - pd.Timedelta(days=options[selection])
-    filtered_df = TPSC1[TPSC1['INVITATIONDT'] >= start_date]
+    filtered_df = TPSC1[TPSC1['INVITATIONDT_UTC'] >= start_date]
 else:
     filtered_df = TPSC1
 
